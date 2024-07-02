@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -17,12 +18,17 @@ var (
 	header = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("63"))
+		Background(lipgloss.Color("63")).
+		PaddingLeft(2).
+		PaddingRight(2)
+
+	subheader = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("249"))
 
 	footer = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("63"))
+		MarginLeft(1)
 
 	item = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("7")).
@@ -47,7 +53,8 @@ type Model struct {
 
 type Task struct {
 	Description string
-	Checked     bool
+	Complete    bool
+	Time		string
 }
 
 func initialModel() Model {
@@ -94,7 +101,7 @@ func getItemsFromFile() []Task {
 
 func addItem(model *Model) {
 	model.add = false
-	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Checked: false})
+	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("2006-01-02 03:04 pm")})
 	model.textInput.SetValue("")
 }
 
@@ -132,7 +139,8 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if !model.add {
-				model.Items[model.cursor].Checked = !model.Items[model.cursor].Checked
+				model.Items[model.cursor].Complete = !model.Items[model.cursor].Complete
+				model.Items[model.cursor].Time = time.Now().Format("2006-01-02 03:04 pm")
 			} else {
 				addItem(&model)
 			}
@@ -168,24 +176,30 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model Model) View() string {
-	output := header.Width(model.w).Render("ToGo") + "\n\n"
+	output := header.Render("ToGo - " + strconv.Itoa(len(model.Items)) + " items") + "\n\n"
 
 	for i, v := range model.Items{
-		var content string
+		var content, subtitle string
+
+		if v.Complete {
+			subtitle += "Completed - " + v.Time
+		} else {
+			subtitle += "Incomplete"
+		}
 
 		if i == model.cursor {
 			content += selected.Width(model.w).Render(v.Description) + "\n"
-			content += selected.Width(model.w).Render(strconv.FormatBool(v.Checked)) + "\n"
+			content += selected.Width(model.w).Render(subtitle) + "\n"
 		} else {
 			content += item.Width(model.w).Render(v.Description) + "\n"
-			content += item.Width(model.w).Render(strconv.FormatBool(v.Checked)) + "\n"
+			content += item.Width(model.w).Render(subtitle) + "\n"
 		}
 
 		output += content + "\n"
 	}
 
 	// The footer
-	output += footer.Width(model.w).Render("Press Esc to quit.")
+	output += footer.Render("↓/j down • ↑/k up • Enter mark complete • a add • q/Esc quit")
 
 	// Send the UI for rendering
 	return output
