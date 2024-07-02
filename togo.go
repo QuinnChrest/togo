@@ -22,9 +22,6 @@ var (
 		PaddingLeft(2).
 		PaddingRight(2)
 
-	subheader = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("249"))
-
 	footer = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
@@ -41,6 +38,9 @@ var (
 		Foreground(lipgloss.Color("63")).
 		BorderForeground(lipgloss.Color("63")).
 		Bold(true)
+
+	offGrey = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("240"))
 )
 
 type Model struct {
@@ -101,8 +101,12 @@ func getItemsFromFile() []Task {
 
 func addItem(model *Model) {
 	model.add = false
-	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("2006-01-02 03:04 pm")})
+	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("01/02/2006 03:04 pm")})
 	model.textInput.SetValue("")
+}
+
+func removeItem(slice []Task, s int) []Task {
+    return append(slice[:s], slice[s+1:]...)
 }
 
 func (model Model) Init() tea.Cmd {
@@ -140,7 +144,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter":
 			if !model.add {
 				model.Items[model.cursor].Complete = !model.Items[model.cursor].Complete
-				model.Items[model.cursor].Time = time.Now().Format("2006-01-02 03:04 pm")
+				model.Items[model.cursor].Time = time.Now().Format("01/02/2006 03:04 pm")
 			} else {
 				addItem(&model)
 			}
@@ -150,6 +154,11 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				model.add = true
 				model.textInput, cmd = model.textInput.Update(tea.KeyMsg{})
 				return model, cmd
+			}
+
+		case "delete":
+			if !model.add {
+				model.Items = removeItem(model.Items, model.cursor)
 			}
 
 		// The "down" and "j" keys move the cursor down
@@ -198,8 +207,23 @@ func (model Model) View() string {
 		output += content + "\n"
 	}
 
-	// The footer
-	output += footer.Render("↓/j down • ↑/k up • Enter mark complete • a add • q/Esc quit")
+	output += footer.Render(
+		fmt.Sprintf(
+			"%s %s %s %s %s %s %s %s %s %s %s %s",
+			"↓/j",
+			offGrey.Render("down •"),
+			"↑/k",
+			offGrey.Render("up •"),
+			"enter",
+			offGrey.Render("mark complete •"),
+			"a",
+			offGrey.Render("add •"),
+			"delete",
+			offGrey.Render("remove •"),
+			"q/escape",
+			offGrey.Render("quit"),
+		),
+	)
 
 	// Send the UI for rendering
 	return output
