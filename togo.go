@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -24,9 +24,17 @@ var (
 		Foreground(lipgloss.Color("#FAFAFA")).
 		Background(lipgloss.Color("63"))
 
-	border = lipgloss.NewStyle().
+	item = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("7")).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("63"))
+		BorderForeground(lipgloss.Color("7")).
+		BorderLeft(true).
+		PaddingLeft(2)
+
+	selected = item.
+		Foreground(lipgloss.Color("63")).
+		BorderForeground(lipgloss.Color("63")).
+		Bold(true)
 )
 
 type Model struct {
@@ -34,7 +42,6 @@ type Model struct {
 	cursor    int
 	add       bool
 	textInput textinput.Model
-	viewPort  viewport.Model
 	w, h      int
 }
 
@@ -56,14 +63,10 @@ func initialModel() Model {
 	ti.CharLimit = 156
 	ti.Width = w
 
-	vp := viewport.New(w-2, h-4)
-	vp.MouseWheelEnabled = true
-
 	return Model{
 		Items:     getItemsFromFile(),
 		add:       false,
 		textInput: ti,
-		viewPort:  vp,
 		w:         w,
 		h:         h,
 	}
@@ -125,9 +128,6 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			if model.cursor > 0 && !model.add {
 				model.cursor--
-				if model.cursor < model.viewPort.Height {
-					model.viewPort.LineUp(1)
-				}
 			}
 
 		case "enter":
@@ -144,27 +144,16 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return model, cmd
 			}
 
-		case "u":
-			if !model.add {
-				model.viewPort.LineDown(1)
-			}
-
 		// The "down" and "j" keys move the cursor down
 		case "down", "j":
 			if model.cursor < len(model.Items)-1 && !model.add {
 				model.cursor++
-				if model.cursor > model.viewPort.Height {
-					model.viewPort.LineDown(1)
-				}
 			}
 		}
 
 	case tea.WindowSizeMsg:
 		if model.h != msg.Height || model.w != msg.Width {
 			model.h, model.w = msg.Height, msg.Width
-
-			model.viewPort.Height = model.h - 4
-			model.viewPort.Width = model.w - 2
 
 			model.textInput.Width = model.w
 		}
@@ -179,40 +168,20 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model Model) View() string {
-	output := header.Width(model.w).Render("ToGo") + "\n"
+	output := header.Width(model.w).Render("ToGo") + "\n\n"
 
-	content := ""
+	for i, v := range model.Items{
+		var content string
 
-	// Iterate over our choices
-	for i, item := range model.Items {
-
-		// Is the cursor pointing at this choice?
-		cursor := " " // no cursor
-		if model.cursor == i {
-			cursor = ">" // cursor!
+		if i == model.cursor {
+			content += selected.Width(model.w).Render(v.Description) + "\n"
+			content += selected.Width(model.w).Render(strconv.FormatBool(v.Checked)) + "\n"
+		} else {
+			content += item.Width(model.w).Render(v.Description) + "\n"
+			content += item.Width(model.w).Render(strconv.FormatBool(v.Checked)) + "\n"
 		}
 
-		checked := " "
-		if item.Checked {
-			checked = "x"
-		}
-
-		// Render the row
-		content += fmt.Sprintf("%s [%s] %s", cursor, checked, item.Description)
-		if i < len(model.Items)-1 {
-			content += "\n"
-		}
-	}
-
-	if model.add {
-		model.viewPort.Height -= 3
-	}
-
-	model.viewPort.SetContent(content)
-	output += border.Render(model.viewPort.View()) + "\n"
-
-	if model.add {
-		output += "\n" + model.textInput.View() + "\n\n"
+		output += content + "\n"
 	}
 
 	// The footer
