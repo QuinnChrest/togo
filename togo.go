@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"strconv"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
@@ -35,9 +37,9 @@ var (
 		PaddingLeft(2)
 
 	selected = item.
-		Foreground(lipgloss.Color("63")).
-		BorderForeground(lipgloss.Color("63")).
-		Bold(true)
+			Foreground(lipgloss.Color("63")).
+			BorderForeground(lipgloss.Color("63")).
+			Bold(true)
 
 	offGrey = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("240"))
@@ -48,13 +50,15 @@ type Model struct {
 	cursor    int
 	add       bool
 	textInput textinput.Model
+	viewPort  viewport.Model
 	w, h      int
+	p, pl, pc int
 }
 
 type Task struct {
 	Description string
 	Complete    bool
-	Time		string
+	Time        string
 }
 
 func initialModel() Model {
@@ -70,13 +74,33 @@ func initialModel() Model {
 	ti.CharLimit = 156
 	ti.Width = w
 
+	vp := viewport.New(w, h)
+
+	items := getItemsFromFile()
+
+	pl, pc := getPages(h, len(items))
+
 	return Model{
-		Items:     getItemsFromFile(),
+		Items:     items,
 		add:       false,
 		textInput: ti,
+		viewPort:  vp,
 		w:         w,
 		h:         h,
+		p:		   0,
+		pl:        pl,
+		pc:		   pc,
 	}
+}
+
+func getPages(height int, itemCount int) (pl int, pc int) {
+	if height < 7 || itemCount == 0 {
+        return 0, 0
+    }
+
+    itemsPerPage := int(math.Floor(float64(height - 4) / float64(3)))
+
+    return itemsPerPage, int(math.Ceil(float64(itemCount) / float64(itemsPerPage)))
 }
 
 func getItemsFromFile() []Task {
@@ -101,12 +125,12 @@ func getItemsFromFile() []Task {
 
 func addItem(model *Model) {
 	model.add = false
-	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("01/02/2006 03:04 pm")})
+	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("01/02/2006 03:04 PM")})
 	model.textInput.SetValue("")
 }
 
 func removeItem(slice []Task, s int) []Task {
-    return append(slice[:s], slice[s+1:]...)
+	return append(slice[:s], slice[s+1:]...)
 }
 
 func (model Model) Init() tea.Cmd {
@@ -141,10 +165,29 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				model.cursor--
 			}
 
+		// The "up" and "k" keys move the cursor up
+		case "left", "h":
+			if model.p > 0 && !model.add {
+				model.p--
+			}
+
+		// The "up" and "k" keys move the cursor up
+		case "right", "l":
+			if model.p + 1 < model.pc && !model.add {
+				model.p++
+			}
+
+			// The "down" and "j" keys move the cursor down
+		case "down", "j":
+			if model.cursor < len(model.Items)-1 && !model.add {
+				model.cursor++
+			}
+
 		case "enter":
 			if !model.add {
-				model.Items[model.cursor].Complete = !model.Items[model.cursor].Complete
-				model.Items[model.cursor].Time = time.Now().Format("01/02/2006 03:04 pm")
+				index := model.p * model.pl + model.cursor
+				model.Items[index].Complete = !model.Items[index].Complete
+				model.Items[index].Time = time.Now().Format("01/02/2006 03:04 PM")
 			} else {
 				addItem(&model)
 			}
@@ -160,19 +203,21 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if !model.add {
 				model.Items = removeItem(model.Items, model.cursor)
 			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if model.cursor < len(model.Items)-1 && !model.add {
-				model.cursor++
-			}
 		}
 
 	case tea.WindowSizeMsg:
 		if model.h != msg.Height || model.w != msg.Width {
 			model.h, model.w = msg.Height, msg.Width
 
+			model.viewPort.Width, model.viewPort.Height = model.w, model.h
+
 			model.textInput.Width = model.w
+
+			model.pl, model.pc = getPages(model.h, len(model.Items))
+
+			if model.pc > model.p {
+				model.p = model.pc - 1
+			}
 		}
 	}
 
@@ -187,7 +232,9 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (model Model) View() string {
 	output := header.Render("ToGo - " + strconv.Itoa(len(model.Items)) + " items") + "\n\n"
 
-	for i, v := range model.Items{
+	page := model.Items[model.p * model.pl : min(((model.p * model.pl) + model.pl), len(model.Items))]
+
+	for i, v := range page {
 		var content, subtitle string
 
 		if v.Complete {
@@ -207,26 +254,60 @@ func (model Model) View() string {
 		output += content + "\n"
 	}
 
-	output += footer.Render(
-		fmt.Sprintf(
-			"%s %s %s %s %s %s %s %s %s %s %s %s",
-			"↓/j",
-			offGrey.Render("down •"),
-			"↑/k",
-			offGrey.Render("up •"),
-			"enter",
-			offGrey.Render("mark complete •"),
-			"a",
-			offGrey.Render("add •"),
-			"delete",
-			offGrey.Render("remove •"),
-			"q/escape",
-			offGrey.Render("quit"),
-		),
-	)
+	output += footer.MarginTop(model.h - ((len(page) * 3) + 2) - 2).Render(Paginator(model.p, model.pc) + Controls())
+
+	model.viewPort.SetContent(output)
 
 	// Send the UI for rendering
-	return output
+	return model.viewPort.View()
+}
+
+func min(a, b int) int{
+	if a < b {
+		return a
+	}
+
+	return b
+}
+
+func Paginator(page, pageCount int) string{
+	content := ""
+
+	if pageCount == 0 {
+		return content
+	}
+
+	for i := range pageCount {
+		if i == page {
+			content += "•"
+		} else {
+			content += offGrey.Render("•")
+		}
+	}
+
+	return content + "\n"
+}
+
+func Controls() string {
+	return fmt.Sprintf(
+		"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
+		"↓/j",
+		offGrey.Render("down •"),
+		"↑/k",
+		offGrey.Render("up •"),
+		"←/h",
+		offGrey.Render("page left •"),
+		"→/l",
+		offGrey.Render("page right •"),
+		"enter",
+		offGrey.Render("mark complete •"),
+		"a",
+		offGrey.Render("add •"),
+		"delete",
+		offGrey.Render("remove •"),
+		"q/escape",
+		offGrey.Render("quit"),
+	)
 }
 
 func saveTasks(model Model) {
