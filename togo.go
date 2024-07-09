@@ -232,29 +232,41 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (model Model) View() string {
 	output := header.Render("ToGo - " + strconv.Itoa(len(model.Items)) + " items") + "\n\n"
 
-	page := model.Items[model.p * model.pl : min(((model.p * model.pl) + model.pl), len(model.Items))]
+	if !model.add {
+		page := model.Items[model.p * model.pl : min(((model.p * model.pl) + model.pl), len(model.Items))]
 
-	for i, v := range page {
-		var content, subtitle string
-
-		if v.Complete {
-			subtitle += "Completed - " + v.Time
-		} else {
-			subtitle += "Incomplete"
+		for i, v := range page {
+			var content, subtitle string
+	
+			if v.Complete {
+				subtitle += "Completed - " + v.Time
+			} else {
+				subtitle += "Incomplete"
+			}
+	
+			if i == model.cursor {
+				content += selected.Width(model.w).Render(v.Description) + "\n"
+				content += selected.Width(model.w).Render(subtitle) + "\n"
+			} else {
+				content += item.Width(model.w).Render(v.Description) + "\n"
+				content += item.Width(model.w).Render(subtitle) + "\n"
+			}
+	
+			output += content + "\n"
 		}
 
-		if i == model.cursor {
-			content += selected.Width(model.w).Render(v.Description) + "\n"
-			content += selected.Width(model.w).Render(subtitle) + "\n"
-		} else {
-			content += item.Width(model.w).Render(v.Description) + "\n"
-			content += item.Width(model.w).Render(subtitle) + "\n"
-		}
+		output += footer.MarginTop(model.h - ((len(page) * 3) + 2) - 2).Render(getFooter(model))
+	} else {
+		output += model.textInput.View()
 
-		output += content + "\n"
+		output += fmt.Sprintf(
+			"\n\n%s %s %s %s",
+			"enter",
+			offGrey.Render("add •"),
+			"q/escape",
+			offGrey.Render("cancel"),
+		)
 	}
-
-	output += footer.MarginTop(model.h - ((len(page) * 3) + 2) - 2).Render(Paginator(model.p, model.pc) + Controls())
 
 	model.viewPort.SetContent(output)
 
@@ -270,7 +282,11 @@ func min(a, b int) int{
 	return b
 }
 
-func Paginator(page, pageCount int) string{
+func getFooter(model Model) string {
+	return getPaginator(model.p, model.pc) + getControls(model.add)
+}
+
+func getPaginator(page, pageCount int) string{
 	content := ""
 
 	if pageCount == 0 {
@@ -288,7 +304,7 @@ func Paginator(page, pageCount int) string{
 	return content + "\n"
 }
 
-func Controls() string {
+func getControls(addMode bool) string {
 	return fmt.Sprintf(
 		"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
 		"↓/j",
