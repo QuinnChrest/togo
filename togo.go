@@ -306,15 +306,7 @@ func getPaginator(page, pageCount int) string{
 
 func getControls(addMode bool) string {
 	return fmt.Sprintf(
-		"%s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s",
-		"↓/j",
-		offGrey.Render("down •"),
-		"↑/k",
-		offGrey.Render("up •"),
-		"←/h",
-		offGrey.Render("page left •"),
-		"→/l",
-		offGrey.Render("page right •"),
+		"%s %s %s %s %s %s %s %s",
 		"enter",
 		offGrey.Render("mark complete •"),
 		"a",
