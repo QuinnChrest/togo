@@ -289,8 +289,8 @@ func getFooter(model Model) string {
 func getPaginator(page, pageCount int) string{
 	content := ""
 
-	if pageCount == 0 {
-		return content
+	if pageCount == 1 {
+		return content + "\n"
 	}
 
 	for i := range pageCount {
