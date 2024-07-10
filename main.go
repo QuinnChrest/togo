@@ -9,46 +9,18 @@ import (
 	"strconv"
 	"time"
 
+	"togo/tui/constants"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
-)
-
-var (
-	header = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(lipgloss.Color("63")).
-		PaddingLeft(2).
-		PaddingRight(2)
-
-	footer = lipgloss.NewStyle().
-		Bold(true).
-		Foreground(lipgloss.Color("#FAFAFA")).
-		MarginLeft(1)
-
-	item = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("7")).
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("7")).
-		BorderLeft(true).
-		PaddingLeft(2)
-
-	selected = item.
-			Foreground(lipgloss.Color("63")).
-			BorderForeground(lipgloss.Color("63")).
-			Bold(true)
-
-	offGrey = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("240"))
 )
 
 type Model struct {
 	Items     []Task
 	cursor    int
-	add       bool
+	state     int
 	textInput textinput.Model
 	viewPort  viewport.Model
 	w, h      int
@@ -82,7 +54,7 @@ func initialModel() Model {
 
 	return Model{
 		Items:     items,
-		add:       false,
+		state:     constants.ViewState,
 		textInput: ti,
 		viewPort:  vp,
 		w:         w,
@@ -145,64 +117,9 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Is it a key press?
 	case tea.KeyMsg:
-
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "esc":
-			if !model.add {
-				saveTasks(model)
-				return model, tea.Quit
-			} else {
-				model.textInput.SetValue("")
-				model.add = false
-			}
-
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if model.cursor > 0 && !model.add {
-				model.cursor--
-			}
-
-		// The "up" and "k" keys move the cursor up
-		case "left", "h":
-			if model.p > 0 && !model.add {
-				model.p--
-			}
-
-		// The "up" and "k" keys move the cursor up
-		case "right", "l":
-			if model.p + 1 < model.pc && !model.add {
-				model.p++
-			}
-
-			// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if model.cursor < len(model.Items)-1 && !model.add {
-				model.cursor++
-			}
-
-		case "enter":
-			if !model.add {
-				index := model.p * model.pl + model.cursor
-				model.Items[index].Complete = !model.Items[index].Complete
-				model.Items[index].Time = time.Now().Format("01/02/2006 03:04 PM")
-			} else {
-				addItem(&model)
-			}
-
-		case "a":
-			if !model.add {
-				model.add = true
-				model.textInput, cmd = model.textInput.Update(tea.KeyMsg{})
-				return model, cmd
-			}
-
-		case "delete":
-			if !model.add {
-				model.Items = removeItem(model.Items, model.cursor)
-			}
+		switch model.state{
+			case constants.ViewState:
+				return 
 		}
 
 	case tea.WindowSizeMsg:
@@ -283,7 +200,7 @@ func min(a, b int) int{
 }
 
 func getFooter(model Model) string {
-	return getPaginator(model.p, model.pc) + getControls(model.add)
+	return getPaginator(model.p, model.pc) + getControls()
 }
 
 func getPaginator(page, pageCount int) string{
@@ -304,7 +221,7 @@ func getPaginator(page, pageCount int) string{
 	return content + "\n"
 }
 
-func getControls(addMode bool) string {
+func getControls() string {
 	return fmt.Sprintf(
 		"%s %s %s %s %s %s %s %s",
 		"enter",
@@ -337,7 +254,7 @@ func saveTasks(model Model) {
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
