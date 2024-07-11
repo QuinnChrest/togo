@@ -119,7 +119,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch model.state{
 			case constants.ViewState:
-				return 
+				return  
 		}
 
 	case tea.WindowSizeMsg:
@@ -138,12 +138,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	if !model.add {
-		return model, nil
-	} else {
-		model.textInput, cmd = model.textInput.Update(msg)
-		return model, cmd
-	}
+	return model, nil
 }
 
 func (model Model) View() string {
