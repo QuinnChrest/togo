@@ -9,29 +9,13 @@ import (
 	"strconv"
 	"time"
 
-	"togo/tui/constants"
+	. "togo/tui/constants"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"golang.org/x/term"
 )
-
-type Model struct {
-	Items     []Task
-	cursor    int
-	state     int
-	textInput textinput.Model
-	viewPort  viewport.Model
-	w, h      int
-	p, pl, pc int
-}
-
-type Task struct {
-	Description string
-	Complete    bool
-	Time        string
-}
 
 func initialModel() Model {
 	w, h, err := term.GetSize(int(os.Stdout.Fd()))
@@ -53,26 +37,26 @@ func initialModel() Model {
 	pl, pc := getPages(h, len(items))
 
 	return Model{
-		Items:     items,
-		state:     constants.ViewState,
-		textInput: ti,
-		viewPort:  vp,
-		w:         w,
-		h:         h,
-		p:		   0,
-		pl:        pl,
-		pc:		   pc,
+		Items:      items,
+		State:      ViewState,
+		TextInput:  ti,
+		ViewPort:   vp,
+		Width:      w,
+		Height:     h,
+		Page:       0,
+		PageLength: pl,
+		PageCount:  pc,
 	}
 }
 
 func getPages(height int, itemCount int) (pl int, pc int) {
 	if height < 7 || itemCount == 0 {
-        return 0, 0
-    }
+		return 0, 0
+	}
 
-    itemsPerPage := int(math.Floor(float64(height - 4) / float64(3)))
+	itemsPerPage := int(math.Floor(float64(height-4) / float64(3)))
 
-    return itemsPerPage, int(math.Ceil(float64(itemCount) / float64(itemsPerPage)))
+	return itemsPerPage, int(math.Ceil(float64(itemCount) / float64(itemsPerPage)))
 }
 
 func getItemsFromFile() []Task {
@@ -96,9 +80,8 @@ func getItemsFromFile() []Task {
 }
 
 func addItem(model *Model) {
-	model.add = false
-	model.Items = append(model.Items, Task{Description: model.textInput.Value(), Complete: false, Time: time.Now().Format("01/02/2006 03:04 PM")})
-	model.textInput.SetValue("")
+	model.Items = append(model.Items, Task{Description: model.TextInput.Value(), Complete: false, Time: time.Now().Format("01/02/2006 03:04 PM")})
+	model.TextInput.SetValue("")
 }
 
 func removeItem(slice []Task, s int) []Task {
@@ -111,15 +94,14 @@ func (model Model) Init() tea.Cmd {
 }
 
 func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 
 	// Is it a key press?
 	case tea.KeyMsg:
-		switch model.state{
-			case constants.ViewState:
-				return  
+		switch model.State {
+		case ViewState:
+			return model, nil
 		}
 
 	case tea.WindowSizeMsg:
@@ -142,51 +124,43 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model Model) View() string {
-	output := header.Render("ToGo - " + strconv.Itoa(len(model.Items)) + " items") + "\n\n"
+	output := HeaderStyle.Render("ToGo - "+strconv.Itoa(len(model.Items))+" items") + "\n\n"
 
-	if !model.add {
-		page := model.Items[model.p * model.pl : min(((model.p * model.pl) + model.pl), len(model.Items))]
+	if !false {
+		page := model.Items[model.p*model.pl : min(((model.p*model.pl)+model.pl), len(model.Items))]
 
 		for i, v := range page {
 			var content, subtitle string
-	
+
 			if v.Complete {
 				subtitle += "Completed - " + v.Time
 			} else {
 				subtitle += "Incomplete"
 			}
-	
-			if i == model.cursor {
-				content += selected.Width(model.w).Render(v.Description) + "\n"
-				content += selected.Width(model.w).Render(subtitle) + "\n"
+
+			if i == model.Cursor {
+				content += SelectedItemStyle.Width(model.Width).Render(v.Description) + "\n"
+				content += SelectedItemStyle.Width(model.Width).Render(subtitle) + "\n"
 			} else {
-				content += item.Width(model.w).Render(v.Description) + "\n"
-				content += item.Width(model.w).Render(subtitle) + "\n"
+				content += SelectedItemStyle.Width(model.Width).Render(v.Description) + "\n"
+				content += SelectedItemStyle.Width(model.Width).Render(subtitle) + "\n"
 			}
-	
+
 			output += content + "\n"
 		}
 
-		output += footer.MarginTop(model.h - ((len(page) * 3) + 2) - 2).Render(getFooter(model))
+		output += FooterStyle.MarginTop(model.Height - ((len(page) * 3) + 2) - 2).Render(getFooter(model))
 	} else {
-		output += model.textInput.View()
-
-		output += fmt.Sprintf(
-			"\n\n%s %s %s %s",
-			"enter",
-			offGrey.Render("add •"),
-			"q/escape",
-			offGrey.Render("cancel"),
-		)
+		output += model.TextInput.View()
 	}
 
-	model.viewPort.SetContent(output)
+	model.ViewPort.SetContent(output)
 
 	// Send the UI for rendering
-	return model.viewPort.View()
+	return model.ViewPort.View()
 }
 
-func min(a, b int) int{
+func min(a, b int) int {
 	if a < b {
 		return a
 	}
@@ -195,10 +169,10 @@ func min(a, b int) int{
 }
 
 func getFooter(model Model) string {
-	return getPaginator(model.p, model.pc) + getControls()
+	return getPaginator(model.Page, model.PageCount) + getControls()
 }
 
-func getPaginator(page, pageCount int) string{
+func getPaginator(page, pageCount int) string {
 	content := ""
 
 	if pageCount == 1 {
@@ -209,7 +183,7 @@ func getPaginator(page, pageCount int) string{
 		if i == page {
 			content += "•"
 		} else {
-			content += offGrey.Render("•")
+			content += "•"
 		}
 	}
 
@@ -220,13 +194,13 @@ func getControls() string {
 	return fmt.Sprintf(
 		"%s %s %s %s %s %s %s %s",
 		"enter",
-		offGrey.Render("mark complete •"),
+		"mark complete •",
 		"a",
-		offGrey.Render("add •"),
+		"add •",
 		"delete",
-		offGrey.Render("remove •"),
+		"remove •",
 		"q/escape",
-		offGrey.Render("quit"),
+		"quit",
 	)
 }
 

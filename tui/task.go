@@ -1,11 +1,8 @@
-package task
+package tui
 
-import {
-	"fmt"
-	"log"
-
+import (
 	tea "github.com/charmbracelet/bubbletea"
-}
+)
 
 func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return model, nil
