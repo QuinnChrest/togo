@@ -49,6 +49,13 @@ func initialModel() Model {
 	}
 }
 
+type Model struct {
+	Items                                                     []Task
+	TextInput                                                 textinput.Model
+	ViewPort                                                  viewport.Model
+	State, Cursor, Width, Height, Page, PageLength, PageCount int
+}
+
 func getPages(height int, itemCount int) (pl int, pc int) {
 	if height < 7 || itemCount == 0 {
 		return 0, 0
@@ -105,17 +112,17 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		if model.h != msg.Height || model.w != msg.Width {
-			model.h, model.w = msg.Height, msg.Width
+		if model.Height != msg.Height || model.Width != msg.Width {
+			model.Height, model.Width = msg.Height, msg.Width
 
-			model.viewPort.Width, model.viewPort.Height = model.w, model.h
+			model.ViewPort.Width, model.ViewPort.Height = model.Width, model.Height
 
-			model.textInput.Width = model.w
+			model.TextInput.Width = model.Width
 
-			model.pl, model.pc = getPages(model.h, len(model.Items))
+			model.PageLength, model.PageCount = getPages(model.Height, len(model.Items))
 
-			if model.pc > model.p {
-				model.p = model.pc - 1
+			if model.PageCount > model.Page {
+				model.Page = model.PageCount - 1
 			}
 		}
 	}
@@ -127,7 +134,7 @@ func (model Model) View() string {
 	output := HeaderStyle.Render("ToGo - "+strconv.Itoa(len(model.Items))+" items") + "\n\n"
 
 	if !false {
-		page := model.Items[model.p*model.pl : min(((model.p*model.pl)+model.pl), len(model.Items))]
+		page := model.Items[model.Page*model.PageLength : min(((model.Page*model.PageLength)+model.PageLength), len(model.Items))]
 
 		for i, v := range page {
 			var content, subtitle string
@@ -204,8 +211,8 @@ func getControls() string {
 	)
 }
 
-func saveTasks(model Model) {
-	jsonData, err := json.MarshalIndent(model.Items, "", "      ")
+func saveTasks(items []Task) {
+	jsonData, err := json.MarshalIndent(items, "", "      ")
 	if err != nil {
 		log.Fatal(err)
 	}

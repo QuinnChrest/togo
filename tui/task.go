@@ -1,6 +1,8 @@
 package tui
 
 import (
+	. "main"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 

@@ -2,8 +2,6 @@ package constants
 
 import (
 	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -68,13 +66,6 @@ var Keymap = keymap{
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
 	),
-}
-
-type Model struct {
-	Items                                                     []Task
-	TextInput                                                 textinput.Model
-	ViewPort                                                  viewport.Model
-	State, Cursor, Width, Height, Page, PageLength, PageCount int
 }
 
 type Task struct {
