@@ -12,7 +12,7 @@ import (
 )
 
 func openSqlite() (*gorm.DB, error) {
-	db, err := gorm.Open(sqlite.Open("new.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("togo.db"), &gorm.Config{})
 	if err != nil {
 		return db, fmt.Errorf("unable to open database: %w", err)
 	}
