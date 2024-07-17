@@ -1,38 +1,36 @@
 package tui
 
 import (
-	"log"
-	"os"
+	"togo/task"
 	"togo/tui/constants"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"golang.org/x/term"
 )
 
 type Entry struct {
 	input textinput.Model
+	edit  bool
+	task  task.Task
 }
 
-func InitEntry(value string) *Entry {
-	w, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func InitEntry(task task.Task) *Entry {
 	// initialize text input
 	ti := textinput.New()
 	ti.Placeholder = "Add Task"
 	ti.Focus()
 	ti.CharLimit = 156
-	ti.Width = w
+	ti.Width = constants.WindowSize.Width
 
-	if len(value) > 0 {
-		ti.SetValue(value)
+	m := Entry{task: task}
+
+	if task.Description != "" {
+		m.edit = true
+		ti.SetValue(task.Description)
 	}
 
-	m := Entry{input: ti}
+	m.input = ti
 
 	return &m
 }
@@ -51,7 +49,11 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, constants.Keymap.Back):
 			return InitTask(), nil
 		case key.Matches(msg, constants.Keymap.Enter):
-			constants.Tr.CreateTask([]byte(model.input.Value()))
+			if model.edit {
+				constants.Tr.EditTask(model.task.ID, model.input.Value())
+			} else {
+				constants.Tr.CreateTask([]byte(model.input.Value()))
+			}
 			return InitTask(), nil
 		}
 	}

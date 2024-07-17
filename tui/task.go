@@ -13,15 +13,6 @@ type Model struct {
 }
 
 func InitTask() tea.Model {
-	// w, h, err := term.GetSize(int(os.Stdout.Fd()))
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
-	//vp := viewport.New(w, h)
-
-	// pl, pc := getPages(h, len(items))
-
 	t, _ := constants.Tr.GetTasks()
 
 	return Model{
@@ -42,11 +33,11 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, constants.Keymap.Create):
-			entry := InitEntry("")
+			entry := InitEntry(task.Task{})
 			return entry.Update(constants.WindowSize)
 
 		case key.Matches(msg, constants.Keymap.Edit):
-			entry := InitEntry(model.list[constants.Cursor].Description)
+			entry := InitEntry(model.list[constants.Cursor])
 			return entry.Update(constants.WindowSize)
 
 		case key.Matches(msg, constants.Keymap.Up) && constants.Cursor != 0:
