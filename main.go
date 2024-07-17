@@ -5,11 +5,12 @@ import (
 	"log"
 	"os"
 
-	. "togo/tui/constants"
+	"togo/tui"
+	constants "togo/tui/constants"
 )
 
-func getItemsFromFile() []Task {
-	var list []Task
+func getItemsFromFile() {
+	var list []constants.Task
 
 	// read in the contents of json file or create one if one doesn't exist
 	file, err := os.Open("data.json")
@@ -18,16 +19,17 @@ func getItemsFromFile() []Task {
 		if err != nil {
 			log.Fatal(err)
 		} else {
-			list = []Task{}
+			list = []constants.Task{}
 		}
 	} else {
 		json.NewDecoder(file).Decode(&list)
 	}
 	defer file.Close()
 
-	return list
+	constants.List = list
 }
 
 func main() {
-	Start(getItemsFromFile())
+	getItemsFromFile()
+	tui.Start()
 }

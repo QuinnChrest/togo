@@ -2,6 +2,7 @@ package constants
 
 import (
 	"github.com/charmbracelet/bubbles/key"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -32,17 +33,19 @@ var (
 )
 
 var (
-	ViewState   int = 1
-	CreateState int = 2
-	EditState   int = 3
+	WindowSize 	tea.WindowSizeMsg
+	Program		*tea.Program
+	List		[]Task
 )
 
 type keymap struct {
-	Create key.Binding
-	Edit   key.Binding
-	Delete key.Binding
-	Quit   key.Binding
-	Back   key.Binding
+	Create	key.Binding
+	Edit	key.Binding
+	Delete	key.Binding
+	Quit	key.Binding
+	Back	key.Binding
+	Up		key.Binding
+	Down	key.Binding
 }
 
 var Keymap = keymap{
@@ -65,6 +68,14 @@ var Keymap = keymap{
 	Back: key.NewBinding(
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
+	),
+	Up: key.NewBinding(
+		key.WithKeys("j"),
+		key.WithHelp("j", "Up"),
+	),
+	Down: key.NewBinding(
+		key.WithKeys("k"),
+		key.WithHelp("k", "Down"),
 	),
 }
 
