@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	task "togo/task"
+	"togo/task"
 	"togo/tui"
 
 	"gorm.io/driver/sqlite"
