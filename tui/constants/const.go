@@ -1,6 +1,8 @@
 package constants
 
 import (
+	"togo/task"
+
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -33,19 +35,21 @@ var (
 )
 
 var (
-	WindowSize 	tea.WindowSizeMsg
-	Program		*tea.Program
-	List		[]Task
+	WindowSize tea.WindowSizeMsg
+	Program    *tea.Program
+	Cursor     int
+	Tr         *task.GormRepository
 )
 
 type keymap struct {
-	Create	key.Binding
-	Edit	key.Binding
-	Delete	key.Binding
-	Quit	key.Binding
-	Back	key.Binding
-	Up		key.Binding
-	Down	key.Binding
+	Create key.Binding
+	Edit   key.Binding
+	Delete key.Binding
+	Quit   key.Binding
+	Back   key.Binding
+	Enter  key.Binding
+	Up     key.Binding
+	Down   key.Binding
 }
 
 var Keymap = keymap{
@@ -69,6 +73,10 @@ var Keymap = keymap{
 		key.WithKeys("esc"),
 		key.WithHelp("esc", "back"),
 	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "enter"),
+	),
 	Up: key.NewBinding(
 		key.WithKeys("j"),
 		key.WithHelp("j", "Up"),
@@ -77,10 +85,4 @@ var Keymap = keymap{
 		key.WithKeys("k"),
 		key.WithHelp("k", "Down"),
 	),
-}
-
-type Task struct {
-	Description string
-	Complete    bool
-	Time        string
 }

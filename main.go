@@ -1,35 +1,33 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
-	"os"
 
+	task "togo/task"
 	"togo/tui"
-	constants "togo/tui/constants"
+
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
-func getItemsFromFile() {
-	var list []constants.Task
-
-	// read in the contents of json file or create one if one doesn't exist
-	file, err := os.Open("data.json")
+func openSqlite() (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite.Open("new.db"), &gorm.Config{})
 	if err != nil {
-		err := os.WriteFile("data.json", []byte(""), 0666)
-		if err != nil {
-			log.Fatal(err)
-		} else {
-			list = []constants.Task{}
-		}
-	} else {
-		json.NewDecoder(file).Decode(&list)
+		return db, fmt.Errorf("unable to open database: %w", err)
 	}
-	defer file.Close()
-
-	constants.List = list
+	err = db.AutoMigrate(&task.Task{})
+	if err != nil {
+		return db, fmt.Errorf("unable to migrate database: %w", err)
+	}
+	return db, nil
 }
 
 func main() {
-	getItemsFromFile()
-	tui.Start()
+	db, err := openSqlite()
+	if err != nil {
+		log.Fatal(err)
+	}
+	tr := task.GormRepository{DB: db}
+	tui.Start(tr)
 }

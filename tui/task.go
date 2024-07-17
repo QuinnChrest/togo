@@ -1,24 +1,15 @@
 package tui
 
 import (
-	constants "togo/tui/constants"
+	"togo/task"
+	"togo/tui/constants"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type mode int
-
-const (
-	nav mode = iota
-	edit
-	create
-)
-
 type Model struct {
-	mode		mode
-	list		[]constants.Task
-	cursor		int
+	list []task.Task
 }
 
 func InitTask() tea.Model {
@@ -30,11 +21,11 @@ func InitTask() tea.Model {
 	//vp := viewport.New(w, h)
 
 	// pl, pc := getPages(h, len(items))
- 
+
+	t, _ := constants.Tr.GetTasks()
+
 	return Model{
-		list:		constants.List,
-		mode: 		nav,
-		cursor:		0,
+		list: t,
 	}
 }
 
@@ -47,7 +38,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		constants.WindowSize = msg
-	
+
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, constants.Keymap.Create):
@@ -55,14 +46,14 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return entry.Update(constants.WindowSize)
 
 		case key.Matches(msg, constants.Keymap.Edit):
-			entry := InitEntry(model.list[model.cursor].Description)
+			entry := InitEntry(model.list[constants.Cursor].Description)
 			return entry.Update(constants.WindowSize)
 
-		case key.Matches(msg, constants.Keymap.Up) && model.cursor != 0:
-			model.cursor--
+		case key.Matches(msg, constants.Keymap.Up) && constants.Cursor != 0:
+			constants.Cursor--
 
-		case key.Matches(msg, constants.Keymap.Down) && model.cursor != len(model.list) - 1:
-			model.cursor++
+		case key.Matches(msg, constants.Keymap.Down) && constants.Cursor != len(model.list)-1:
+			constants.Cursor++
 
 		case key.Matches(msg, constants.Keymap.Quit):
 			return model, tea.Quit
@@ -76,7 +67,7 @@ func (model Model) View() string {
 	content := ""
 
 	for i, v := range model.list {
-		if i == model.cursor {
+		if i == constants.Cursor {
 			content += constants.SelectedItemStyle.Render(v.Description) + "\n"
 		} else {
 			content += constants.ItemStyle.Render(v.Description) + "\n"

@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	constants "togo/tui/constants"
+	"togo/task"
+	"togo/tui/constants"
 
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func Start() {
+func Start(tr task.GormRepository) {
+	constants.Tr = &tr
 	m := InitTask()
 	constants.Program = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := constants.Program.Run(); err != nil {

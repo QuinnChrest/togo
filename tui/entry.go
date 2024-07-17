@@ -3,7 +3,7 @@ package tui
 import (
 	"log"
 	"os"
-	constants "togo/tui/constants"
+	"togo/tui/constants"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -12,7 +12,7 @@ import (
 )
 
 type Entry struct {
-	input	textinput.Model
+	input textinput.Model
 }
 
 func InitEntry(value string) *Entry {
@@ -50,8 +50,9 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch {
 		case key.Matches(msg, constants.Keymap.Back):
 			return InitTask(), nil
-		case key.Matches(msg, constants.Keymap.Quit):
-			return model, tea.Quit
+		case key.Matches(msg, constants.Keymap.Enter):
+			constants.Tr.CreateTask([]byte(model.input.Value()))
+			return InitTask(), nil
 		}
 	}
 
