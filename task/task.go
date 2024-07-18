@@ -2,6 +2,7 @@ package task
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -13,7 +14,6 @@ type Task struct {
 	Time        string
 }
 
-// Repository the CRUD functionality for entries
 type Repository interface {
 	DeleteTask(taskID uint) error
 	GetTasks() ([]Task, error)
@@ -21,41 +21,40 @@ type Repository interface {
 	EditTask(id uint, description string) error
 }
 
-// GormRepository holds the gorm DB and is a TaskRepository
 type GormRepository struct {
 	DB *gorm.DB
 }
 
-// DeleteEntryByID delete an entry by its ID
 func (g *GormRepository) DeleteTask(taskID uint) error {
 	result := g.DB.Delete(&Task{}, taskID)
 	return result.Error
 }
 
-// GetEntriesByProjectID get all entries for a given project
 func (g *GormRepository) GetTasks() ([]Task, error) {
 	var tasks []Task
 	if err := g.DB.Find(&tasks).Error; err != nil {
-		return tasks, fmt.Errorf("Table is empty: %v", err)
+		return tasks, fmt.Errorf("table is empty: %v", err)
 	}
 	return tasks, nil
 }
 
-// CreateEntry create a new entry in the database
-func (g *GormRepository) CreateTask(description []byte) error {
-	task := Task{Description: string(description[:])}
+func (g *GormRepository) CreateTask(description string) error {
+	task := Task{Description: description}
 	result := g.DB.Create(&task)
 	return result.Error
 }
 
-// RenameProject rename an existing project
-func (g *GormRepository) EditTask(id uint, description string) error {
-	var task Task
-	if err := g.DB.Where("id = ?", id).First(&task).Error; err != nil {
-		return fmt.Errorf("unable to edit task: %w", err)
+func (g *GormRepository) EditTask(t Task) error {
+	if err := g.DB.Save(&t).Error; err != nil {
+		return fmt.Errorf("unable to save task: %w", err)
 	}
-	task.Description = description
-	if err := g.DB.Save(&task).Error; err != nil {
+	return nil
+}
+
+func (g *GormRepository) MarkComplete(t *Task) error {
+	t.Complete = !t.Complete
+	t.Time = time.Now().Format("01/02/2006 03:04 PM")
+	if err := g.DB.Save(&t).Error; err != nil {
 		return fmt.Errorf("unable to save task: %w", err)
 	}
 	return nil

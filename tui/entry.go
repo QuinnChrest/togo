@@ -4,15 +4,20 @@ import (
 	"togo/task"
 	"togo/tui/constants"
 
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Entry struct {
 	input textinput.Model
 	edit  bool
 	task  task.Task
+	help  help.Model
+	view  viewport.Model
 }
 
 func InitEntry(task task.Task) *Entry {
@@ -20,10 +25,13 @@ func InitEntry(task task.Task) *Entry {
 	ti := textinput.New()
 	ti.Placeholder = "Add Task"
 	ti.Focus()
-	ti.CharLimit = 156
-	ti.Width = constants.WindowSize.Width
+	ti.CharLimit = 100
+	ti.Width = 100
 
-	m := Entry{task: task}
+	vp := viewport.New(100, 1)
+	vp.YPosition = 0
+
+	m := Entry{task: task, view: vp}
 
 	if task.Description != "" {
 		m.edit = true
@@ -31,6 +39,8 @@ func InitEntry(task task.Task) *Entry {
 	}
 
 	m.input = ti
+
+	m.help = help.New()
 
 	return &m
 }
@@ -46,13 +56,16 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, constants.Keymap.Back):
+		case key.Matches(msg, keyMap.Back):
 			return InitTask(), nil
-		case key.Matches(msg, constants.Keymap.Enter):
+		case key.Matches(msg, keyMap.Quit):
+			return model, tea.Quit
+		case key.Matches(msg, keyMap.Enter):
 			if model.edit {
-				constants.Tr.EditTask(model.task.ID, model.input.Value())
+				model.task.Description = model.input.Value()
+				constants.Tr.EditTask(model.task)
 			} else {
-				constants.Tr.CreateTask([]byte(model.input.Value()))
+				constants.Tr.CreateTask(model.input.Value())
 			}
 			return InitTask(), nil
 		}
@@ -63,5 +76,58 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model Entry) View() string {
-	return model.input.View()
+	model.view.SetContent(model.input.View())
+	return lipgloss.NewStyle().
+		Width(constants.WindowSize.Width).
+		Height(constants.WindowSize.Height).
+		Render(
+			lipgloss.NewStyle().
+				Width(100).
+				Render("Add New Task"),
+			"\n",
+			lipgloss.NewStyle().
+				Border(lipgloss.RoundedBorder()).
+				BorderForeground(lipgloss.Color("#ec42ff")).
+				Render(model.view.View()),
+			"\n",
+			lipgloss.NewStyle().
+				Width(100).
+				Render(model.help.View(keyMap)),
+		)
+}
+
+type keymap struct {
+	Quit   key.Binding
+	Back   key.Binding
+	Enter  key.Binding
+}
+
+var keyMap = keymap{
+	Quit: key.NewBinding(
+		key.WithKeys("ctrl+c"),
+		key.WithHelp("ctrl+c", "Quit"),
+	),
+	Back: key.NewBinding(
+		key.WithKeys("esc"),
+		key.WithHelp("esc", "Back"),
+	),
+	Enter: key.NewBinding(
+		key.WithKeys("enter"),
+		key.WithHelp("enter", "Create"),
+	),
+}
+
+// ShortHelp returns keybindings to be shown in the mini help view. It's part
+// of the key.Map interface.
+func (k keymap) ShortHelp() []key.Binding {
+	return []key.Binding{k.Enter, k.Back, k.Quit}
+}
+
+// FullHelp returns keybindings for the expanded help view. It's part of the
+// key.Map interface.
+func (k keymap) FullHelp() [][]key.Binding {
+	return [][]key.Binding{
+		{}, // first column
+		{}, // second column
+	}
 }
