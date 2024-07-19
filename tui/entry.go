@@ -35,6 +35,7 @@ func InitEntry(task task.Task) *Entry {
 	m.input = ti
 
 	m.help = help.New()
+	m.help.Width = int(float64(constants.WindowSize.Width) * 0.6)
 
 	return &m
 }

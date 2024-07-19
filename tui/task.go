@@ -79,17 +79,29 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				constants.Cursor--
 			}
 
-		case key.Matches(msg, constants.Keymap.Up) && constants.Cursor != 0:
-			constants.Cursor--
+		case key.Matches(msg, constants.Keymap.Up):
+			if constants.Cursor == 0 && model.page.Page != 0 {
+				model.page.PrevPage()
+				constants.Cursor = model.page.PerPage - 1
+			} else if constants.Cursor != 0  {
+				constants.Cursor--
+			}
 
-		case key.Matches(msg, constants.Keymap.Down) && constants.Cursor != len(model.list)-1:
-			constants.Cursor++
+		case key.Matches(msg, constants.Keymap.Down):
+			if constants.Cursor == model.page.PerPage-1 && model.page.Page != model.page.TotalPages-1 {
+				model.page.NextPage()
+				constants.Cursor = 0
+			} else if constants.Cursor != model.page.PerPage-1 {
+				constants.Cursor++
+			}
 
 		case key.Matches(msg, constants.Keymap.Left):
 			model.page.PrevPage()
+			constants.Cursor = 0
 
 		case key.Matches(msg, constants.Keymap.Right):
 			model.page.NextPage()
+			constants.Cursor = 0
 		}
 	}
 
@@ -122,16 +134,24 @@ func (model Model) View() string {
 	}
 
 	if len(model.list) == 0 {
-		b.WriteString("There are no items to do yet. Add one by pressing 'c' to create.\n\n")
+		b.WriteString("There are no tasks to do yet. Add one by pressing 'c' to create.\n\n")
 	}
 
-	b.WriteString(strings.Repeat("\n", constants.WindowSize.Height-(len(model.list[start:end])*3+7)))
+	b.WriteString(strings.Repeat("\n", getNumberOfNewLines(len(model.list[start:end]))))
 
 	b.WriteString("  " + model.page.View() + "\n\n")
 
 	b.WriteString(model.help.View(constants.Keymap))
 
 	return b.String()
+}
+
+func getNumberOfNewLines(listLen int) int {
+	if listLen == 0 {
+		return constants.WindowSize.Height-9
+	} else {
+		return constants.WindowSize.Height-(listLen*3+7)
+	}
 }
 
 func removeTask(t []task.Task, index int) []task.Task {
