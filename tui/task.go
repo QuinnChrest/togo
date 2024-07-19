@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"log"
-	"os"
 	"strings"
 	"togo/task"
 	"togo/tui/constants"
@@ -12,7 +10,6 @@ import (
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/term"
 )
 
 type Model struct {
@@ -23,13 +20,6 @@ type Model struct {
 
 // Initialize model for task view
 func InitTask() tea.Model {
-	// Get terminal window size right off the bat for certain spacing needs
-	var err error
-	constants.WindowSize.Width, constants.WindowSize.Height, err = term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	// Get all tasks from sqlite db
 	t, _ := constants.Tr.GetTasks()
 
