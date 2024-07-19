@@ -7,7 +7,6 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
-	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -17,21 +16,16 @@ type Entry struct {
 	edit  bool
 	task  task.Task
 	help  help.Model
-	view  viewport.Model
 }
 
 func InitEntry(task task.Task) *Entry {
 	// initialize text input
 	ti := textinput.New()
-	ti.Placeholder = "Add Task"
 	ti.Focus()
 	ti.CharLimit = 100
-	ti.Width = 100
+	ti.Width = int(float64(constants.WindowSize.Width) * 0.6)
 
-	vp := viewport.New(100, 1)
-	vp.YPosition = 0
-
-	m := Entry{task: task, view: vp}
+	m := Entry{task: task}
 
 	if task.Description != "" {
 		m.edit = true
@@ -76,30 +70,28 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (model Entry) View() string {
-	model.view.SetContent(model.input.View())
 	return lipgloss.NewStyle().
 		Width(constants.WindowSize.Width).
 		Height(constants.WindowSize.Height).
+		AlignVertical(lipgloss.Center).
+		AlignHorizontal(lipgloss.Center).
 		Render(
-			lipgloss.NewStyle().
-				Width(100).
-				Render("Add New Task"),
-			"\n",
-			lipgloss.NewStyle().
-				Border(lipgloss.RoundedBorder()).
-				BorderForeground(lipgloss.Color("#ec42ff")).
-				Render(model.view.View()),
-			"\n",
-			lipgloss.NewStyle().
-				Width(100).
-				Render(model.help.View(keyMap)),
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				"  Add New Task",
+				lipgloss.NewStyle().
+					Border(lipgloss.RoundedBorder()).
+					BorderForeground(lipgloss.Color("#ec42ff")).
+					Render(" "+model.input.View()),
+				model.help.View(keyMap),
+			),
 		)
 }
 
 type keymap struct {
-	Quit   key.Binding
-	Back   key.Binding
-	Enter  key.Binding
+	Quit  key.Binding
+	Back  key.Binding
+	Enter key.Binding
 }
 
 var keyMap = keymap{

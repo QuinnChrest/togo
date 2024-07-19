@@ -63,19 +63,19 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return entry.Update(constants.WindowSize)
 
 		case key.Matches(msg, constants.Keymap.Edit):
-			entry := InitEntry(model.list[constants.Cursor + (model.page.Page * model.page.PerPage)])
+			entry := InitEntry(model.list[constants.Cursor+(model.page.Page*model.page.PerPage)])
 			return entry.Update(constants.WindowSize)
 
 		case key.Matches(msg, constants.Keymap.Quit):
 			return model, tea.Quit
 
 		case key.Matches(msg, constants.Keymap.Enter):
-			constants.Tr.MarkComplete(&model.list[constants.Cursor + (model.page.Page * model.page.PerPage)])
+			constants.Tr.MarkComplete(&model.list[constants.Cursor+(model.page.Page*model.page.PerPage)])
 
 		case key.Matches(msg, constants.Keymap.Delete):
-			constants.Tr.DeleteTask(model.list[constants.Cursor + (model.page.Page * model.page.PerPage)].ID)
-			model.list = removeTask(model.list, constants.Cursor + (model.page.Page * model.page.PerPage))
-			if constants.Cursor != 0{
+			constants.Tr.DeleteTask(model.list[constants.Cursor+(model.page.Page*model.page.PerPage)].ID)
+			model.list = removeTask(model.list, constants.Cursor+(model.page.Page*model.page.PerPage))
+			if constants.Cursor != 0 {
 				constants.Cursor--
 			}
 
@@ -99,7 +99,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (model Model) View() string {
 	var b strings.Builder
 
-	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Center, constants.HeaderStyle.Render("--"), constants.HeaderTextStyle.Render("  ToGo  "), constants.HeaderStyle.Render(strings.Repeat("-",constants.WindowSize.Width))) + "\n\n")
+	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Center, constants.HeaderStyle.Render("——"), constants.HeaderTextStyle.Render("  ToGo  "), constants.HeaderStyle.Render(strings.Repeat("—", constants.WindowSize.Width))) + "\n\n")
 
 	start, end := model.page.GetSliceBounds(len(model.list))
 
@@ -125,6 +125,8 @@ func (model Model) View() string {
 		b.WriteString("There are no items to do yet. Add one by pressing 'c' to create.\n\n")
 	}
 
+	b.WriteString(strings.Repeat("\n", constants.WindowSize.Height-(len(model.list[start:end])*3+7)))
+
 	b.WriteString("  " + model.page.View() + "\n\n")
 
 	b.WriteString(model.help.View(constants.Keymap))
@@ -132,6 +134,6 @@ func (model Model) View() string {
 	return b.String()
 }
 
-func removeTask(t []task.Task, index int) []task.Task{
+func removeTask(t []task.Task, index int) []task.Task {
 	return append(t[:index], t[index+1:]...)
 }
