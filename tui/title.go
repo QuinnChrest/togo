@@ -13,6 +13,7 @@ import (
 	"golang.org/x/term"
 )
 
+// Lipgloss styles for title view
 var (
 	subtle    = lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#383838"}
 	special   = lipgloss.AdaptiveColor{Light: "#43BF6D", Dark: "#73F59F"}
@@ -42,10 +43,7 @@ var (
 		String()
 )
 
-type Title struct{
-	timer *time.Timer
-	exit bool
-}
+type Title struct{}
 
 func InitTitle() tea.Model {
 	// Get terminal window size right off the bat for certain spacing needs
@@ -58,16 +56,16 @@ func InitTitle() tea.Model {
 	return Title{}
 }
 
-// Init run any intial IO on program start
 func (t Title) Init() tea.Cmd {
-	return nil
+	return tea.Tick(time.Second*3, func(_ time.Time) tea.Msg {
+		return "exit"
+	})
 }
-
-// Update loop ran every time an action occurs followed by a new render
 func (t Title) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	t.timer = time.NewTimer(time.Second * 2)
-
-	
+	switch msg {
+	case "exit":
+		return InitTask(), nil
+	}
 
 	return t, nil
 }
@@ -96,7 +94,7 @@ func (t Title) View() string {
 	}
 
 	desc := lipgloss.JoinVertical(lipgloss.Left,
-		descStyle.Render("A Go based To Do list application (cause why not)"),
+		descStyle.Render("A Go based To Do list application (just for fun)"),
 		infoStyle.Render("By Quinn Chrest"+divider+url("https://github.com/QuinnChrest/togo")),
 	)
 

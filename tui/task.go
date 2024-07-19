@@ -86,11 +86,11 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				constants.Cursor++
 			}
 
-		case key.Matches(msg, taskKeyMap.Left):
+		case key.Matches(msg, taskKeyMap.Left) && model.page.Page != 0:
 			model.page.PrevPage()
 			constants.Cursor = 0
 
-		case key.Matches(msg, taskKeyMap.Right):
+		case key.Matches(msg, taskKeyMap.Right) && model.page.Page != model.page.TotalPages - 1:
 			model.page.NextPage()
 			constants.Cursor = 0
 		}
