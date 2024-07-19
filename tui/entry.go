@@ -13,31 +13,20 @@ import (
 
 type Entry struct {
 	input textinput.Model
-	edit  bool
 	task  task.Task
 	help  help.Model
 }
 
+// Initialize entry struct for text input view
 func InitEntry(task task.Task) *Entry {
 	// initialize text input
 	ti := textinput.New()
 	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = int(float64(constants.WindowSize.Width) * 0.6)
+	ti.SetValue(task.Description)
 
-	m := Entry{task: task}
-
-	if task.Description != "" {
-		m.edit = true
-		ti.SetValue(task.Description)
-	}
-
-	m.input = ti
-
-	m.help = help.New()
-	m.help.Width = int(float64(constants.WindowSize.Width) * 0.6)
-
-	return &m
+	return &Entry{task: task, help: help.New(), input: ti}
 }
 
 func (model Entry) Init() tea.Cmd {
@@ -45,18 +34,19 @@ func (model Entry) Init() tea.Cmd {
 	return nil
 }
 
+// Update loop ran every time an action occurs followed by a new render
 func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, keyMap.Back):
+		case key.Matches(msg, entryKeyMap.Back):
 			return InitTask(), nil
-		case key.Matches(msg, keyMap.Quit):
+		case key.Matches(msg, entryKeyMap.Quit):
 			return model, tea.Quit
-		case key.Matches(msg, keyMap.Enter):
-			if model.edit {
+		case key.Matches(msg, entryKeyMap.Enter):
+			if model.task.ID != 0 {
 				model.task.Description = model.input.Value()
 				constants.Tr.EditTask(model.task)
 			} else {
@@ -70,6 +60,7 @@ func (model Entry) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return model, cmd
 }
 
+// Render that occurs after every update loop
 func (model Entry) View() string {
 	return lipgloss.NewStyle().
 		Width(constants.WindowSize.Width).
@@ -84,18 +75,20 @@ func (model Entry) View() string {
 					Border(lipgloss.RoundedBorder()).
 					BorderForeground(lipgloss.Color("#ec42ff")).
 					Render(" "+model.input.View()),
-				model.help.View(keyMap),
+				model.help.View(entryKeyMap),
 			),
 		)
 }
 
-type keymap struct {
+/* ENTRY VIEW KEY MAP ITEMS */
+
+type entrykeymap struct {
 	Quit  key.Binding
 	Back  key.Binding
 	Enter key.Binding
 }
 
-var keyMap = keymap{
+var entryKeyMap = entrykeymap{
 	Quit: key.NewBinding(
 		key.WithKeys("ctrl+c"),
 		key.WithHelp("ctrl+c", "Quit"),
@@ -112,13 +105,13 @@ var keyMap = keymap{
 
 // ShortHelp returns keybindings to be shown in the mini help view. It's part
 // of the key.Map interface.
-func (k keymap) ShortHelp() []key.Binding {
+func (k entrykeymap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Enter, k.Back, k.Quit}
 }
 
 // FullHelp returns keybindings for the expanded help view. It's part of the
 // key.Map interface.
-func (k keymap) FullHelp() [][]key.Binding {
+func (k entrykeymap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{}, // first column
 		{}, // second column

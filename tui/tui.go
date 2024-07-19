@@ -11,7 +11,10 @@ import (
 )
 
 func Start(tr task.GormRepository) {
+	// Set the global variable for our data repository
 	constants.Tr = &tr
+
+	// Initialize task view and start program
 	m := InitTask()
 	constants.Program = tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := constants.Program.Run(); err != nil {

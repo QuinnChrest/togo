@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Open our sqlite DB with the gorm package
 func openSqlite() (*gorm.DB, error) {
 	db, err := gorm.Open(sqlite.Open("togo.db"), &gorm.Config{})
 	if err != nil {
@@ -24,6 +25,7 @@ func openSqlite() (*gorm.DB, error) {
 }
 
 func main() {
+	// Grab our gorm DB and start the Bubble Tea Terminal UI
 	db, err := openSqlite()
 	if err != nil {
 		log.Fatal(err)
