@@ -58,12 +58,12 @@ func InitTitle() tea.Model {
 
 func (t Title) Init() tea.Cmd {
 	return tea.Tick(time.Second*3, func(_ time.Time) tea.Msg {
-		return "exit"
+		return "START"
 	})
 }
 func (t Title) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg {
-	case "exit":
+	case "START":
 		return InitTask(), nil
 	}
 
