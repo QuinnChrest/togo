@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Array of operating systems and architectures
-OS_ARCHES=("windows/amd64" "linux/amd64" "darwin/amd64" "linux/arm" "linux/arm64")
+OS_ARCHES=("windows/amd64" "linux/amd64" "darwin/amd64" "linux/arm" "linux/arm64" "darwin/arm64")
 
 # Iterate over each OS/ARCH combination and build the application
 for os_arch in "${OS_ARCHES[@]}"
