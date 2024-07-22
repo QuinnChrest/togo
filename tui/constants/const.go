@@ -35,6 +35,9 @@ var (
 
 	InactivePageDotStyle = lipgloss.NewStyle().
 		Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"})
+	
+	GrayTextStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#909090"))
 )
 
 // Global variables for application
