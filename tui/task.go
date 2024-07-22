@@ -82,7 +82,7 @@ func (model Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if constants.Cursor == model.page.PerPage-1 && model.page.Page != model.page.TotalPages-1 {
 				model.page.NextPage()
 				constants.Cursor = 0
-			} else if constants.Cursor != model.page.PerPage-1 {
+			} else if constants.Cursor != model.page.PerPage-1 && constants.Cursor+(model.page.Page*model.page.PerPage) != len(model.list)-1 {
 				constants.Cursor++
 			}
 
@@ -138,7 +138,7 @@ func (model Model) View() string {
 
 	// If there were no list items added before add an info message stating there are no items to display
 	if len(model.list) == 0 {
-		b.WriteString("There are no tasks to do yet. Add one by pressing 'c' to create.\n\n")
+		b.WriteString(constants.GrayTextStyle.Render("There are no tasks to do yet. Add one by pressing 'c' to create.") + "\n\n")
 	}
 
 	// Add some new lines between the list items and footer menu so that the footer menu always sits on the bottom of the window
