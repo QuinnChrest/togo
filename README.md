@@ -2,4 +2,4 @@
 
 Check out my [blog post](https://quinnchrest.com/2024/07/19/terminal-task-tracking.html) discussing the creation and inspiration for this project!
 
-[releases](https://github.com/QuinnChrest/togo/releases/tag/v1.0.0)
+[releases](https://github.com/QuinnChrest/togo/releases)
